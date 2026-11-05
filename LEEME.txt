@@ -1,0 +1,1 @@
+Coloca las carpetas imagenes y sonidos junto al archivo .py del juego. Incluye 5 PNG y 4 efectos WAV.
