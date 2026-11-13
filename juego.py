@@ -38,6 +38,31 @@ ROJO = (255, 80, 80)
 CARPETA = os.path.dirname(os.path.abspath(__file__))
 CARPETA_IMAGENES = os.path.join(CARPETA, "imagenes")
 CARPETA_SONIDOS = os.path.join(CARPETA, "sonidos")
+CARPETA_MEDIA = os.path.join(CARPETA, "Media")
+
+# Música de fondo (ubicada en Media)
+if SONIDO_ACTIVO:
+    try:
+        ruta_musica = os.path.join(CARPETA_MEDIA, "terrormusic.mp3")
+        pygame.mixer.music.load(ruta_musica)
+        pygame.mixer.music.set_volume(0.4)
+        pygame.mixer.music.play(-1)
+    except (pygame.error, FileNotFoundError) as error:
+        print("No se pudo cargar la música:", error)
+
+# Cargar fondos
+fondos = []
+
+for nombre in ["fondo1.jpg", "fondo2.jpg", "fondo3.jpg"]:
+    ruta = os.path.join(CARPETA_MEDIA, nombre)
+    imagen = pygame.image.load(ruta).convert()
+    imagen = pygame.transform.scale(imagen, (ANCHO, ALTO))
+    fondos.append(imagen)
+
+# Temporizador de fondos
+indice_fondo = 0
+ultimo_cambio_fondo = pygame.time.get_ticks()
+INTERVALO_FONDO = 2500
 
 
 # Cargar imagen; si no existe, usar un dibujo sencillo
@@ -62,7 +87,7 @@ def cargar_imagen(nombre, tamaño, color, forma="rectangulo"):
         return imagen
 
 
-# Cargar sonidos; si no existen, continuar sin sonido
+# Cargar sonidos
 def cargar_sonido(nombre):
     if not SONIDO_ACTIVO:
         return None
@@ -190,6 +215,13 @@ reiniciar_partida()
 # Bucle principal
 while True:
 
+    # Cambiar fondo cada 2.5 segundos
+    tiempo_actual = pygame.time.get_ticks()
+
+    if tiempo_actual - ultimo_cambio_fondo >= INTERVALO_FONDO:
+        indice_fondo = (indice_fondo + 1) % len(fondos)
+        ultimo_cambio_fondo = tiempo_actual
+
     # Eventos
     for evento in pygame.event.get():
 
@@ -212,7 +244,7 @@ while True:
         grupo_jugador.update()
         grupo_enemigo.update()
 
-        # Recoger monedas usando colisiones entre sprites
+        # Recoger monedas
         monedas_recogidas = pygame.sprite.spritecollide(
             jugador, grupo_monedas, True
         )
@@ -239,7 +271,7 @@ while True:
                 estado = "derrota"
                 reproducir_sonido(sonido_derrota)
 
-        # Ganar al recoger todas las monedas y tocar la salida
+        # Ganar al recoger todas las monedas
         if estado == "jugando" and len(grupo_monedas) == 0:
             if pygame.sprite.spritecollideany(
                 jugador, grupo_salida
@@ -247,8 +279,8 @@ while True:
                 estado = "victoria"
                 reproducir_sonido(sonido_victoria)
 
-    # Dibujar fondo
-    pantalla.fill(FONDO)
+    # Dibujar fondo animado
+    pantalla.blit(fondos[indice_fondo], (0, 0))
 
     # Pantalla de inicio
     if estado == "inicio":
@@ -285,7 +317,6 @@ while True:
         grupo_enemigo.draw(pantalla)
         grupo_monedas.draw(pantalla)
 
-        # Parpadeo después de recibir daño
         if invulnerable == 0 or invulnerable // 6 % 2 == 0:
             grupo_jugador.draw(pantalla)
 
@@ -338,4 +369,3 @@ while True:
     # Actualizar pantalla
     pygame.display.flip()
     reloj.tick(FPS)
-
